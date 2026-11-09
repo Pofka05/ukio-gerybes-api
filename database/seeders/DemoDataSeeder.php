@@ -12,19 +12,30 @@ class DemoDataSeeder extends Seeder
 {
     public function run(): void
     {
-        $farmer = User::firstOrCreate(
+        $farmer = User::updateOrCreate(
             ['email' => 'jonas@ukis.lt'],
             [
                 'name' => 'Jonas Ūkininkas',
                 'password' => bcrypt('password'),
+                'role' => 'farmer',
             ]
         );
 
-        $buyer = User::firstOrCreate(
+        $buyer = User::updateOrCreate(
             ['email' => 'petras@gmail.com'],
             [
                 'name' => 'Petras Pirkėjas',
                 'password' => bcrypt('password'),
+                'role' => 'buyer',
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'admin@ukis.lt'],
+            [
+                'name' => 'Sistemos administratorius',
+                'password' => bcrypt('password'),
+                'role' => 'admin',
             ]
         );
 

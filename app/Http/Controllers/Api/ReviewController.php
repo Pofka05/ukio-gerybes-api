@@ -61,12 +61,12 @@ class ReviewController extends Controller
         }
 
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'required|string',
         ]);
 
         $validated['product_id'] = $productId;
+        $validated['user_id'] = $request->user()->id;
 
         $review = Review::create($validated);
 
@@ -79,6 +79,10 @@ class ReviewController extends Controller
         $review = Review::find($id);
         if (! $review) {
             return response()->json(['message' => 'Atsiliepimas nerastas'], 404);
+        }
+
+        if (! $request->user()->isAdmin() && $review->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Neturite teisės redaguoti šio atsiliepimo'], 403);
         }
 
         $validated = $request->validate([
@@ -97,6 +101,10 @@ class ReviewController extends Controller
         $review = Review::find($id);
         if (! $review) {
             return response()->json(['message' => 'Atsiliepimas nerastas'], 404);
+        }
+
+        if (! request()->user()->isAdmin() && $review->user_id !== request()->user()->id) {
+            return response()->json(['message' => 'Neturite teisės ištrinti šio atsiliepimo'], 403);
         }
 
         $review->delete();

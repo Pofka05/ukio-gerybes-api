@@ -15,6 +15,12 @@ class UserController extends Controller
             return response()->json(['message' => 'Naudotojas nerastas'], 404);
         }
 
+        $currentUser = request()->user();
+
+        if (! $currentUser->isAdmin() && $currentUser->id !== $user->id) {
+            return response()->json(['message' => 'Neturite teisės ištrinti šio naudotojo'], 403);
+        }
+
         $user->delete();
 
         return response()->json(['message' => 'Naudotojas sėkmingai pašalintas'], 200);

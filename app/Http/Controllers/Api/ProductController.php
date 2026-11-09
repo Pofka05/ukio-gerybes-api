@@ -47,6 +47,10 @@ class ProductController extends Controller
             return response()->json(['message' => 'Ūkininkas nerastas'], 404);
         }
 
+        if (! $this->canManageUser($farmerId)) {
+            return response()->json(['message' => 'Neturite teisės peržiūrėti šios panelės'], 403);
+        }
+
         $products = Product::where('user_id', $farmerId)->with('reviews')->get();
 
         return response()->json([
@@ -79,12 +83,17 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'category_id' => 'required|exists:categories,id',
-            'user_id' => 'required|exists:users,id',
+            'user_id' => 'sometimes|exists:users,id',
             'title' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'description' => 'nullable|string',
         ]);
+
+        $user = $request->user();
+        $validated['user_id'] = $user->isAdmin()
+            ? ($validated['user_id'] ?? $user->id)
+            : $user->id;
 
         $product = Product::create($validated);
 
@@ -96,6 +105,10 @@ class ProductController extends Controller
         $product = Product::find($id);
         if (! $product) {
             return response()->json(['message' => 'Produktas nerastas'], 404);
+        }
+
+        if (! $this->canManageUser($product->user_id)) {
+            return response()->json(['message' => 'Neturite teisės redaguoti šio produkto'], 403);
         }
 
         $validated = $request->validate([
@@ -118,8 +131,19 @@ class ProductController extends Controller
             return response()->json(['message' => 'Produktas nerastas'], 404);
         }
 
+        if (! $this->canManageUser($product->user_id)) {
+            return response()->json(['message' => 'Neturite teisės ištrinti šio produkto'], 403);
+        }
+
         $product->delete();
 
         return response()->json(null, 204);
+    }
+
+    private function canManageUser(int|string $userId): bool
+    {
+        $user = request()->user();
+
+        return $user?->isAdmin() || (int) $user?->id === (int) $userId;
     }
 }
